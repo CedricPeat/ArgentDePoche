@@ -313,23 +313,65 @@
       input.value = "";
     }
 
-    // Crédit automatique du dimanche
+    // Crédit automatique - rattrape tous les dimanches manqués
     function addAllowanceIfSunday() {
       const today = new Date();
-      const day = today.getDay(); // 0 = dimanche
-      const last = localStorage.getItem("lastAllowance");
+      const lastAllowanceStr = localStorage.getItem("lastAllowance");
       
-      // Si c'est dimanche et que ce n'est pas déjà crédité cette semaine
-      if (day === 0) {
-        if (!last || new Date(last).toDateString() !== today.toDateString()) {
+      let lastAllowance;
+      if (lastAllowanceStr) {
+        lastAllowance = new Date(lastAllowanceStr);
+      } else {
+        // Première utilisation - considérer que le dernier dimanche a été traité
+        lastAllowance = getLastSunday(today);
+        localStorage.setItem("lastAllowance", lastAllowance.toDateString());
+        return;
+      }
+      
+      // Trouver tous les dimanches entre la dernière allocation et aujourd'hui
+      const missedSundays = getMissedSundays(lastAllowance, today);
+      
+      if (missedSundays.length > 0) {
+        missedSundays.forEach(sunday => {
           kids.forEach(kid => {
             wallets[kid].balance = Math.round((wallets[kid].balance + allowance) * 100) / 100;
-            wallets[kid].history.unshift(`+${allowance.toFixed(2)} € (argent de poche - ${today.toLocaleDateString()})`);
+            wallets[kid].history.unshift(`+${allowance.toFixed(2)} € (argent de poche - ${sunday.toLocaleDateString()})`);
           });
-          localStorage.setItem("lastAllowance", today.toDateString());
-          saveData();
+        });
+        
+        // Mettre à jour la date de dernière allocation
+        const latestSunday = missedSundays[missedSundays.length - 1];
+        localStorage.setItem("lastAllowance", latestSunday.toDateString());
+        saveData();
+        
+        if (missedSundays.length > 1) {
+          alert(`📅 ${missedSundays.length} semaines d'argent de poche ajoutées automatiquement !`);
         }
       }
+    }
+    
+    // Obtenir le dernier dimanche avant ou égal à une date
+    function getLastSunday(date) {
+      const sunday = new Date(date);
+      const daysSinceSunday = sunday.getDay();
+      sunday.setDate(sunday.getDate() - daysSinceSunday);
+      sunday.setHours(0, 0, 0, 0);
+      return sunday;
+    }
+    
+    // Trouver tous les dimanches manqués entre deux dates
+    function getMissedSundays(lastAllowance, today) {
+      const missedSundays = [];
+      const currentSunday = getLastSunday(today);
+      let checkSunday = new Date(lastAllowance);
+      checkSunday.setDate(checkSunday.getDate() + 7); // Dimanche suivant
+      
+      while (checkSunday <= currentSunday) {
+        missedSundays.push(new Date(checkSunday));
+        checkSunday.setDate(checkSunday.getDate() + 7);
+      }
+      
+      return missedSundays;
     }
 
     // Ajouter manuellement l'argent de poche
@@ -357,19 +399,23 @@
     // Afficher le prochain argent de poche
     function updateNextAllowanceDisplay() {
       const today = new Date();
-      const daysUntilSunday = (7 - today.getDay()) % 7;
-      const nextSunday = new Date(today);
-      nextSunday.setDate(today.getDate() + (daysUntilSunday === 0 ? 7 : daysUntilSunday));
+      const lastAllowanceStr = localStorage.getItem("lastAllowance");
+      const currentSunday = getLastSunday(today);
       
       const el = document.getElementById("nextAllowance");
-      if (today.getDay() === 0) {
-        const last = localStorage.getItem("lastAllowance");
-        if (last && new Date(last).toDateString() === today.toDateString()) {
-          el.textContent = "✅ Argent de poche déjà ajouté aujourd'hui";
+      
+      if (lastAllowanceStr) {
+        const lastAllowance = new Date(lastAllowanceStr);
+        if (lastAllowance.toDateString() === currentSunday.toDateString()) {
+          el.textContent = "✅ Argent de poche à jour pour cette semaine";
         } else {
-          el.textContent = "🎉 C'est dimanche ! Argent de poche disponible";
+          const nextSunday = new Date(currentSunday);
+          nextSunday.setDate(nextSunday.getDate() + 7);
+          el.textContent = `⏰ Prochain argent de poche: ${nextSunday.toLocaleDateString()}`;
         }
       } else {
+        const nextSunday = new Date(currentSunday);
+        nextSunday.setDate(nextSunday.getDate() + 7);
         el.textContent = `⏰ Prochain argent de poche: ${nextSunday.toLocaleDateString()}`;
       }
     }
