@@ -228,30 +228,14 @@
   
   <div class="firebase-config" id="firebaseConfig">
     <h3>🔧 Configuration Firebase</h3>
-    <p>Pour synchroniser les données entre vos appareils, configurez Firebase :</p>
-    
-    <label><strong>API Key:</strong></label>
-    <input type="text" class="config-input" id="apiKey" placeholder="Votre Firebase API Key">
-    
-    <label><strong>Project ID:</strong></label>
-    <input type="text" class="config-input" id="projectId" placeholder="Votre Firebase Project ID">
-    
-    <label><strong>App ID:</strong></label>
-    <input type="text" class="config-input" id="appId" placeholder="Votre Firebase App ID">
-    
-    <button class="btn-admin" onclick="saveFirebaseConfig()">💾 Sauvegarder la configuration</button>
+    <p><strong>✅ Configuration intégrée !</strong></p>
+    <p>Vos clés Firebase sont maintenant intégrées dans l'application. L'app se connectera automatiquement à votre base de données.</p>
+    <p>Si vous avez des problèmes de connexion, vérifiez que :</p>
+    <ul style="text-align: left;">
+      <li>Firestore Database est activé (mode test)</li>
+      <li>Votre projet Firebase est accessible</li>
+    </ul>
     <button class="btn-admin" onclick="toggleConfig()">❌ Fermer</button>
-    
-    <details style="margin-top: 20px;">
-      <summary style="cursor: pointer; font-weight: bold;">📋 Comment obtenir ces informations ?</summary>
-      <ol style="margin-top: 10px; text-align: left;">
-        <li>Allez sur <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a></li>
-        <li>Créez un nouveau projet (ou utilisez un existant)</li>
-        <li>Cliquez sur "Ajouter une application" → "Web"</li>
-        <li>Copiez les valeurs apiKey, projectId et appId</li>
-        <li>Dans "Firestore Database", créez une base de données en mode "test"</li>
-      </ol>
-    </details>
   </div>
 
   <div class="status" id="status">🔄 Initialisation...</div>
@@ -277,56 +261,27 @@
     let db = null;
     let isOnline = false;
 
-    // Configuration Firebase
-    function loadFirebaseConfig() {
-      try {
-        const config = localStorage.getItem("firebaseConfig");
-        return config ? JSON.parse(config) : null;
-      } catch (e) {
-        return null;
-      }
-    }
-
-    function saveFirebaseConfig() {
-      const config = {
-        apiKey: document.getElementById("apiKey").value.trim(),
-        authDomain: document.getElementById("projectId").value.trim() + ".firebaseapp.com",
-        projectId: document.getElementById("projectId").value.trim(),
-        appId: document.getElementById("appId").value.trim()
-      };
-      
-      if (!config.apiKey || !config.projectId || !config.appId) {
-        showStatus("Veuillez remplir tous les champs", "error");
-        return;
-      }
-      
-      localStorage.setItem("firebaseConfig", JSON.stringify(config));
-      toggleConfig();
-      initializeFirebase();
-    }
+    // Configuration Firebase intégrée
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbZIR9gK0kZx5Yq2ReswU2EHCdATP0M6w",
+      authDomain: "argentdepoche-42191.firebaseapp.com",
+      projectId: "argentdepoche-42191",
+      appId: "1:768885231985:web:75be63aa8a0a3d95aa66d0"
+    };
 
     function toggleConfig() {
       const configEl = document.getElementById("firebaseConfig");
-      const bannerEl = document.getElementById("setupBanner");
       configEl.classList.toggle("show");
-      bannerEl.classList.remove("show");
     }
 
     // Initialiser Firebase
     async function initializeFirebase() {
-      const config = loadFirebaseConfig();
-      
-      if (!config) {
-        document.getElementById("setupBanner").classList.add("show");
-        showStatus("Configuration Firebase requise", "error");
-        return;
-      }
 
       try {
         showStatus("Connexion à Firebase...", "loading");
         
         if (!firebase.apps.length) {
-          firebase.initializeApp(config);
+          firebase.initializeApp(firebaseConfig);
         }
         
         db = firebase.firestore();
