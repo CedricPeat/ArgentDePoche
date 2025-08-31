@@ -4,90 +4,386 @@
   <meta charset="UTF-8">
   <title>Argent de poche - Alicia & Emma</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f7f7f7; padding: 20px; }
-    h1 { text-align: center; }
-    .wallet { background: white; border-radius: 12px; padding: 20px; margin: 20px auto; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
-    .name { font-size: 1.4em; font-weight: bold; }
-    .balance { font-size: 1.8em; margin: 10px 0; }
-    .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; margin: 5px; }
-    .btn-add { background: #4CAF50; color: white; }
-    .btn-spend { background: #f44336; color: white; }
-    input { padding: 8px; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px; width: 100%; }
-    ul { list-style: none; padding: 0; max-height: 150px; overflow-y: auto; }
-    li { font-size: 0.9em; padding: 3px 0; border-bottom: 1px solid #eee; }
+    body { 
+      font-family: Arial, sans-serif; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+      padding: 20px; 
+      margin: 0;
+      min-height: 100vh;
+    }
+    h1 { 
+      text-align: center; 
+      color: white; 
+      margin-bottom: 30px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .controls {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .btn-admin {
+      background: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 0 10px;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    .btn-admin:hover {
+      background: #45a049;
+    }
+    .wallet { 
+      background: white; 
+      border-radius: 12px; 
+      padding: 25px; 
+      margin: 20px auto; 
+      max-width: 450px; 
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      transition: transform 0.2s;
+    }
+    .wallet:hover {
+      transform: translateY(-2px);
+    }
+    .name { 
+      font-size: 1.4em; 
+      font-weight: bold; 
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .balance { 
+      font-size: 2.2em; 
+      margin: 15px 0; 
+      color: #2196F3;
+      font-weight: bold;
+    }
+    .transaction-section {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    .transaction-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    .btn { 
+      padding: 10px 15px; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      font-size: 14px;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    .btn:hover {
+      transform: scale(1.05);
+    }
+    .btn-spend { 
+      background: #f44336; 
+      color: white; 
+      flex: 1;
+    }
+    .btn-spend:hover {
+      background: #d32f2f;
+    }
+    .btn-add { 
+      background: #4CAF50; 
+      color: white; 
+      flex: 1;
+    }
+    .btn-add:hover {
+      background: #45a049;
+    }
+    input { 
+      padding: 8px 12px; 
+      border: 1px solid #ddd; 
+      border-radius: 6px; 
+      flex: 2;
+      font-size: 14px;
+    }
+    input:focus {
+      outline: none;
+      border-color: #2196F3;
+      box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+    }
+    .history-section h4 {
+      margin: 15px 0 10px 0;
+      color: #555;
+    }
+    ul { 
+      list-style: none; 
+      padding: 0; 
+      max-height: 200px; 
+      overflow-y: auto; 
+      background: #fafafa;
+      border-radius: 6px;
+      padding: 10px;
+    }
+    li { 
+      font-size: 0.9em; 
+      padding: 8px 0; 
+      border-bottom: 1px solid #eee; 
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    li:last-child {
+      border-bottom: none;
+    }
+    .amount-positive {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+    .amount-negative {
+      color: #f44336;
+      font-weight: bold;
+    }
+    .next-allowance {
+      text-align: center;
+      background: rgba(255,255,255,0.9);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px auto;
+      max-width: 400px;
+      color: #666;
+    }
+    .error {
+      color: #f44336;
+      font-size: 12px;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
-  <h1>💰 Argent de poche</h1>
-
+  <h1>💰 Argent de poche - Alicia & Emma</h1>
+  
+  <div class="controls">
+    <button class="btn-admin" onclick="manualAllowance()">Ajouter argent de poche (+1.50€)</button>
+    <button class="btn-admin" onclick="resetData()">Réinitialiser</button>
+  </div>
+  
+  <div class="next-allowance" id="nextAllowance"></div>
+  
   <div id="wallets"></div>
 
   <script>
     const allowance = 1.50;
     const kids = ["Alicia", "Emma"];
-
+    
+    // Charger les données depuis localStorage (avec gestion d'erreur)
     function loadData() {
-      let data = localStorage.getItem("wallets");
-      if (data) return JSON.parse(data);
+      try {
+        let data = localStorage.getItem("wallets");
+        if (data) {
+          let parsed = JSON.parse(data);
+          // Vérifier la structure des données
+          for (let kid of kids) {
+            if (!parsed[kid] || typeof parsed[kid].balance !== 'number' || !Array.isArray(parsed[kid].history)) {
+              throw new Error("Structure de données invalide");
+            }
+          }
+          return parsed;
+        }
+      } catch (e) {
+        console.warn("Erreur lors du chargement des données:", e);
+      }
+      
+      // Initialisation par défaut
       let init = {};
       kids.forEach(kid => init[kid] = { balance: 0, history: [] });
       return init;
     }
 
+    // Sauvegarder les données
     function saveData() {
-      localStorage.setItem("wallets", JSON.stringify(wallets));
+      try {
+        localStorage.setItem("wallets", JSON.stringify(wallets));
+      } catch (e) {
+        console.error("Erreur lors de la sauvegarde:", e);
+      }
     }
 
+    // Afficher les porte-monnaies
     function render() {
       const container = document.getElementById("wallets");
       container.innerHTML = "";
+      
       for (let kid of kids) {
         let div = document.createElement("div");
         div.className = "wallet";
         div.innerHTML = `
           <div class="name">${kid}</div>
           <div class="balance">${wallets[kid].balance.toFixed(2)} €</div>
-          <input type="number" id="spend-${kid}" placeholder="Montant dépensé (€)" />
-          <button class="btn btn-spend" onclick="spend('${kid}')">Déduire</button>
-          <h4>Historique</h4>
-          <ul>${wallets[kid].history.map(h => <li>${h}</li>).join("")}</ul>
+          
+          <div class="transaction-section">
+            <div class="transaction-row">
+              <input type="number" step="0.01" min="0" id="spend-${kid}" placeholder="Montant (€)" />
+              <button class="btn btn-spend" onclick="spend('${kid}')">Dépenser</button>
+              <button class="btn btn-add" onclick="addMoney('${kid}')">Ajouter</button>
+            </div>
+            <div class="error" id="error-${kid}"></div>
+          </div>
+          
+          <div class="history-section">
+            <h4>📝 Historique (${wallets[kid].history.length} transactions)</h4>
+            <ul>${wallets[kid].history.map(h => `<li>${formatHistoryEntry(h)}</li>`).join("")}</ul>
+          </div>
         `;
         container.appendChild(div);
       }
+      
+      updateNextAllowanceDisplay();
     }
 
+    // Formater les entrées d'historique
+    function formatHistoryEntry(entry) {
+      const parts = entry.split(' (');
+      const amount = parts[0];
+      const date = parts[1] ? parts[1].replace(')', '') : '';
+      const isPositive = amount.startsWith('+');
+      const className = isPositive ? 'amount-positive' : 'amount-negative';
+      
+      return `<span class="${className}">${amount}</span><span class="date">${date}</span>`;
+    }
+
+    // Valider les entrées
+    function validateAmount(kid, amount) {
+      const errorEl = document.getElementById(`error-${kid}`);
+      errorEl.textContent = "";
+      
+      if (isNaN(amount) || amount <= 0) {
+        errorEl.textContent = "Veuillez entrer un montant valide (> 0)";
+        return false;
+      }
+      
+      if (amount > 100) {
+        errorEl.textContent = "Montant trop élevé (max 100€)";
+        return false;
+      }
+      
+      return true;
+    }
+
+    // Déduire une dépense
     function spend(kid) {
       let input = document.getElementById("spend-" + kid);
       let amount = parseFloat(input.value);
-      if (!isNaN(amount) && amount > 0) {
-        wallets[kid].balance -= amount;
-        wallets[kid].history.unshift(- ${amount.toFixed(2)} € (${new Date().toLocaleDateString()}));
-        saveData();
-        render();
-        input.value = "";
+      
+      if (!validateAmount(kid, amount)) return;
+      
+      if (amount > wallets[kid].balance) {
+        document.getElementById(`error-${kid}`).textContent = "Solde insuffisant !";
+        return;
       }
+      
+      wallets[kid].balance = Math.round((wallets[kid].balance - amount) * 100) / 100;
+      wallets[kid].history.unshift(`-${amount.toFixed(2)} € (${new Date().toLocaleDateString()})`);
+      
+      // Limiter l'historique à 50 entrées
+      if (wallets[kid].history.length > 50) {
+        wallets[kid].history = wallets[kid].history.slice(0, 50);
+      }
+      
+      saveData();
+      render();
+      input.value = "";
     }
 
-    function addAllowance() {
+    // Ajouter de l'argent
+    function addMoney(kid) {
+      let input = document.getElementById("spend-" + kid);
+      let amount = parseFloat(input.value);
+      
+      if (!validateAmount(kid, amount)) return;
+      
+      wallets[kid].balance = Math.round((wallets[kid].balance + amount) * 100) / 100;
+      wallets[kid].history.unshift(`+${amount.toFixed(2)} € (${new Date().toLocaleDateString()})`);
+      
+      if (wallets[kid].history.length > 50) {
+        wallets[kid].history = wallets[kid].history.slice(0, 50);
+      }
+      
+      saveData();
+      render();
+      input.value = "";
+    }
+
+    // Crédit automatique du dimanche
+    function addAllowanceIfSunday() {
       const today = new Date();
+      const day = today.getDay(); // 0 = dimanche
       const last = localStorage.getItem("lastAllowance");
-      const lastDate = last ? new Date(last) : null;
-
-      if (!lastDate || today - lastDate >= 7 * 24 * 60 * 60 * 1000) {
-        kids.forEach(kid => {
-          wallets[kid].balance += allowance;
-          wallets[kid].history.unshift(+ ${allowance.toFixed(2)} € (dimanche));
-        });
-        localStorage.setItem("lastAllowance", today);
-        saveData();
-        render();
-        alert("Argent de poche ajouté !");
+      
+      // Si c'est dimanche et que ce n'est pas déjà crédité cette semaine
+      if (day === 0) {
+        if (!last || new Date(last).toDateString() !== today.toDateString()) {
+          kids.forEach(kid => {
+            wallets[kid].balance = Math.round((wallets[kid].balance + allowance) * 100) / 100;
+            wallets[kid].history.unshift(`+${allowance.toFixed(2)} € (argent de poche - ${today.toLocaleDateString()})`);
+          });
+          localStorage.setItem("lastAllowance", today.toDateString());
+          saveData();
+        }
       }
     }
 
+    // Ajouter manuellement l'argent de poche
+    function manualAllowance() {
+      if (confirm("Ajouter 1.50€ d'argent de poche pour Alicia et Emma ?")) {
+        kids.forEach(kid => {
+          wallets[kid].balance = Math.round((wallets[kid].balance + allowance) * 100) / 100;
+          wallets[kid].history.unshift(`+${allowance.toFixed(2)} € (ajout manuel - ${new Date().toLocaleDateString()})`);
+        });
+        saveData();
+        render();
+      }
+    }
+
+    // Réinitialiser les données
+    function resetData() {
+      if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les comptes ?")) {
+        localStorage.removeItem("wallets");
+        localStorage.removeItem("lastAllowance");
+        wallets = loadData();
+        render();
+      }
+    }
+
+    // Afficher le prochain argent de poche
+    function updateNextAllowanceDisplay() {
+      const today = new Date();
+      const daysUntilSunday = (7 - today.getDay()) % 7;
+      const nextSunday = new Date(today);
+      nextSunday.setDate(today.getDate() + (daysUntilSunday === 0 ? 7 : daysUntilSunday));
+      
+      const el = document.getElementById("nextAllowance");
+      if (today.getDay() === 0) {
+        const last = localStorage.getItem("lastAllowance");
+        if (last && new Date(last).toDateString() === today.toDateString()) {
+          el.textContent = "✅ Argent de poche déjà ajouté aujourd'hui";
+        } else {
+          el.textContent = "🎉 C'est dimanche ! Argent de poche disponible";
+        }
+      } else {
+        el.textContent = `⏰ Prochain argent de poche: ${nextSunday.toLocaleDateString()}`;
+      }
+    }
+
+    // Initialisation
     let wallets = loadData();
-    addAllowance(); // Vérifie si on est dimanche et crédite
+    addAllowanceIfSunday();
     render();
+    
+    // Actualiser l'affichage toutes les heures
+    setInterval(() => {
+      addAllowanceIfSunday();
+      render();
+    }, 3600000);
   </script>
 </body>
 </html>
