@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Argent de poche - Alicia & Emma</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f7f7; padding: 20px; }
+    h1 { text-align: center; }
+    .wallet { background: white; border-radius: 12px; padding: 20px; margin: 20px auto; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
+    .name { font-size: 1.4em; font-weight: bold; }
+    .balance { font-size: 1.8em; margin: 10px 0; }
+    .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; margin: 5px; }
+    .btn-add { background: #4CAF50; color: white; }
+    .btn-spend { background: #f44336; color: white; }
+    input { padding: 8px; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px; width: 100%; }
+    ul { list-style: none; padding: 0; max-height: 150px; overflow-y: auto; }
+    li { font-size: 0.9em; padding: 3px 0; border-bottom: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <h1>💰 Argent de poche</h1>
+
+  <div id="wallets"></div>
+
+  <script>
+    const allowance = 1.50;
+    const kids = ["Alicia", "Emma"];
+
+    function loadData() {
+      let data = localStorage.getItem("wallets");
+      if (data) return JSON.parse(data);
+      let init = {};
+      kids.forEach(kid => init[kid] = { balance: 0, history: [] });
+      return init;
+    }
+
+    function saveData() {
+      localStorage.setItem("wallets", JSON.stringify(wallets));
+    }
+
+    function render() {
+      const container = document.getElementById("wallets");
+      container.innerHTML = "";
+      for (let kid of kids) {
+        let div = document.createElement("div");
+        div.className = "wallet";
+        div.innerHTML = `
+          <div class="name">${kid}</div>
+          <div class="balance">${wallets[kid].balance.toFixed(2)} €</div>
+          <input type="number" id="spend-${kid}" placeholder="Montant dépensé (€)" />
+          <button class="btn btn-spend" onclick="spend('${kid}')">Déduire</button>
+          <h4>Historique</h4>
+          <ul>${wallets[kid].history.map(h => <li>${h}</li>).join("")}</ul>
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    function spend(kid) {
+      let input = document.getElementById("spend-" + kid);
+      let amount = parseFloat(input.value);
+      if (!isNaN(amount) && amount > 0) {
+        wallets[kid].balance -= amount;
+        wallets[kid].history.unshift(- ${amount.toFixed(2)} € (${new Date().toLocaleDateString()}));
+        saveData();
+        render();
+        input.value = "";
+      }
+    }
+
+    function addAllowance() {
+      const today = new Date();
+      const last = localStorage.getItem("lastAllowance");
+      const lastDate = last ? new Date(last) : null;
+
+      if (!lastDate || today - lastDate >= 7 * 24 * 60 * 60 * 1000) {
+        kids.forEach(kid => {
+          wallets[kid].balance += allowance;
+          wallets[kid].history.unshift(+ ${allowance.toFixed(2)} € (dimanche));
+        });
+        localStorage.setItem("lastAllowance", today);
+        saveData();
+        render();
+        alert("Argent de poche ajouté !");
+      }
+    }
+
+    let wallets = loadData();
+    addAllowance(); // Vérifie si on est dimanche et crédite
+    render();
+  </script>
+</body>
+</html>
